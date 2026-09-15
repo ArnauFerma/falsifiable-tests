@@ -108,6 +108,10 @@ first attempt broke `confirm()`'s "yes" path with `default=None`, which turns it
 minutes. The harness gained `--timeout` that afternoon. Mutations must be survivable, and
 "survivable" includes "terminates".
 
+## Upstream
+
+The two test changes are offered as [pallets/click#3870](https://github.com/pallets/click/pull/3870).
+
 ## Reproduce
 
 ```bash

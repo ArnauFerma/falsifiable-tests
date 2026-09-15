@@ -1,6 +1,6 @@
 # Test audit — sdispater/tomlkit — 2026-09-15
 
-[tomlkit](https://github.com/sdispater/tomlkit) is a style-preserving TOML parser
+[tomlkit](https://github.com/python-poetry/tomlkit) (formerly `sdispater/tomlkit`) is a style-preserving TOML parser
 (850 ★, used by Poetry). Audited at commit `4b38bec` (2026-09-11) with
 `skills/falsifiable-tests/scripts/mutate.py`; the `toml-test` submodule was fetched so the
 compliance suite runs. Fourteen suite runs, about ninety seconds.
@@ -95,10 +95,14 @@ looks like the strongest kind — an external conformance corpus.
    what it currently cannot.
 3. Add a `+05:30`-style offset to `test_parse_rfc3339_datetime`'s parameters.
 
+## Upstream
+
+Reported as [python-poetry/tomlkit#603](https://github.com/python-poetry/tomlkit/issues/603).
+
 ## Reproduce
 
 ```bash
-git clone https://github.com/sdispater/tomlkit && cd tomlkit && git checkout 4b38bec
+git clone https://github.com/python-poetry/tomlkit && cd tomlkit && git checkout 4b38bec
 git submodule update --init
 python3 -m venv .venv && .venv/bin/pip install -e . pytest pyyaml
 cp <this repo>/case-studies/tomlkit-mutations.json mutations.json

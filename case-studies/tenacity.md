@@ -95,6 +95,10 @@ time.
 None beyond the three above; the suite is broad. The 117 unexamined tests would need
 their own mutations — the harness makes that a matter of adding to `mutations.json`.
 
+## Upstream
+
+Reported as [jd/tenacity#715](https://github.com/jd/tenacity/issues/715).
+
 ## Reproduce
 
 ```bash
