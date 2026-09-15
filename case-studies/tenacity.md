@@ -67,7 +67,7 @@ should have.
 but one test is a thin guard for the boundary that decides whether a retry loop ends on
 time.
 
-### Verified (examples; 66 in total, per-test matrix in `tenacity-matrix.json`)
+### Verified (examples; 66 in total, per-test matrix in `tenacity-matrix.json.gz`)
 
 - `test_stop_after_attempt` (three variants) — red under the `>=` → `>` boundary flip
 - `test_retry_if_exception_of_type`, `test_context_manager_retry_one` and 34 others —

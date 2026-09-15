@@ -1,0 +1,62 @@
+[
+ {
+  "name": "BOOL: 'y' parses as False",
+  "file": "src/click/types.py",
+  "find": "        \"y\": True,\n        \"n\": False,",
+  "replace": "        \"y\": False,\n        \"n\": False,"
+ },
+ {
+  "name": "IntRange clamp ignored below min",
+  "file": "src/click/types.py",
+  "find": "            if min is not None and lt_min:\n                return self._clamp(min, 1, self.min_open)",
+  "replace": "            if False:\n                return self._clamp(min, 1, self.min_open)"
+ },
+ {
+  "name": "Choice case_sensitive=False ignored",
+  "file": "src/click/types.py",
+  "find": "        if not self.case_sensitive:\n            normed_value = normed_value.casefold()",
+  "replace": "        if False:\n            normed_value = normed_value.casefold()"
+ },
+ {
+  "name": "Path exists=True never fails on missing file",
+  "file": "src/click/types.py",
+  "find": "                if not self.exists:\n                    return self.coerce_path_result(rv)",
+  "replace": "                if True:\n                    return self.coerce_path_result(rv)"
+ },
+ {
+  "name": "Context.exit always exits 0",
+  "file": "src/click/core.py",
+  "find": "        raise Exit(code)",
+  "replace": "        raise Exit(0)"
+ },
+ {
+  "name": "echo(err=True) writes to stdout",
+  "file": "src/click/utils.py",
+  "find": "        if err:\n            file = _default_text_stderr()",
+  "replace": "        if False:\n            file = _default_text_stderr()"
+ },
+ {
+  "name": "envvar (single) never read",
+  "file": "src/click/core.py",
+  "find": "        if isinstance(self.envvar, str):\n            rv = os.environ.get(self.envvar)",
+  "replace": "        if isinstance(self.envvar, str):\n            rv = None"
+ },
+ {
+  "name": "help: Options section omitted",
+  "file": "src/click/core.py",
+  "find": "        if opts:\n            with formatter.section(_(\"Options\")):\n                formatter.write_dl(opts)",
+  "replace": "        if False:\n            with formatter.section(_(\"Options\")):\n                formatter.write_dl(opts)"
+ },
+ {
+  "name": "envvar (list) returns first even if empty",
+  "file": "src/click/core.py",
+  "find": "                # Return the first non-empty value of the list of environment variables.\n                if rv:",
+  "replace": "                # Return the first non-empty value of the list of environment variables.\n                if rv is not None:"
+ },
+ {
+  "name": "confirm: 'y' and 'n' both return True",
+  "file": "src/click/termui.py",
+  "find": "        elif value in (\"n\", \"no\"):\n            rv = False",
+  "replace": "        elif value in (\"n\", \"no\"):\n            rv = True"
+ }
+]

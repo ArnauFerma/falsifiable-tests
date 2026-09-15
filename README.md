@@ -76,7 +76,8 @@ skills/falsifiable-tests/
   scripts/mutate.py                   batch harness: many mutations, which tests noticed, safe restore
   scripts/test_mutate.py              the harness's own tests
   scripts/self-mutations.json         defects planted in the harness by CI; every one must be caught
-evals/                                eval cases for `claude plugin eval` (see below)
+evals/                                eval cases for `claude plugin eval`
+case-studies/                         the method applied to open-source suites, with evidence
 ```
 
 `scripts/mutate.py` is language-agnostic. It edits the real file, runs your real test
@@ -105,6 +106,13 @@ non-zero, so any exit-code-based runner would have counted them as passing forev
 
 The skill exists so that practice can be installed instead of re-explained at the start
 of every session.
+
+## Case studies
+
+The method applied to other people's code, with the harness, on a stated day:
+[tenacity](case-studies/tenacity.md), [tomlkit](case-studies/tomlkit.md),
+[click](case-studies/click.md). Index and what they do and do not claim in
+[`case-studies/`](case-studies/README.md).
 
 ## What was measured
 

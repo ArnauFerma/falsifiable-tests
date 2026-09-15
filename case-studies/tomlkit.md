@@ -72,7 +72,7 @@ four datetime types it is not: the 680 compliance cases would stay green under a
 subject" pattern from `references/vacuous-patterns.md`, and it hides in a suite that
 looks like the strongest kind — an external conformance corpus.
 
-### Verified (examples; per-test matrix in `tomlkit-matrix.json`)
+### Verified (examples; per-test matrix in `tomlkit-matrix.json.gz`)
 
 - `test_original_string_and_dumped_string_are_equal[*]` and 80+ others — red when
   comments are dropped from output or not captured by the parser
