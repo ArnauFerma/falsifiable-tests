@@ -78,6 +78,7 @@ skills/falsifiable-tests/
   scripts/self-mutations.json         defects planted in the harness by CI; every one must be caught
 evals/                                eval cases for `claude plugin eval`
 case-studies/                         the method applied to open-source suites, with evidence
+CHANGELOG.md
 ```
 
 `scripts/mutate.py` is language-agnostic. It edits the real file, runs your real test

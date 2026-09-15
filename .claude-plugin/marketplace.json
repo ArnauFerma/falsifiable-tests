@@ -12,7 +12,7 @@
       "name": "falsifiable-tests",
       "source": "./",
       "description": "Prove a test can fail before trusting it: break the code under test, confirm the test turns red for the right reason, restore.",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "author": {
         "name": "Arnau Ferrerons Manich",
         "url": "https://github.com/ArnauFerma"
