@@ -17,10 +17,16 @@ As a plugin (recommended — updates with `/plugin update`):
 /plugin install falsifiable-tests@falsifiable-tests
 ```
 
-With the [skills.sh](https://skills.sh) CLI (also works for Cursor, Codex CLI and others):
+### Other agents
+
+The skill text is agent-agnostic — it needs nothing from the host beyond "run a
+test" and "show me the failure". The [skills.sh](https://skills.sh) CLI installs it
+into Cursor, Codex CLI, GitHub Copilot, Gemini CLI, OpenCode, Windsurf and about
+sixty others:
 
 ```bash
-npx skills add ArnauFerma/falsifiable-tests
+npx skills add ArnauFerma/falsifiable-tests                 # pick agents interactively
+npx skills add ArnauFerma/falsifiable-tests -a cursor -a codex -a github-copilot -g
 ```
 
 Or clone it straight into your personal skills directory:
@@ -35,9 +41,10 @@ Or into a single project:
 git clone https://github.com/ArnauFerma/falsifiable-tests .claude/skills/falsifiable-tests
 ```
 
-Either way it loads automatically when tests are written, modified or reviewed, and can
-be invoked directly with `/falsifiable-tests` (or `/falsifiable-tests:falsifiable-tests`
-when installed as a plugin).
+In Claude Code it loads automatically when tests are written, modified or reviewed, and
+can be invoked directly with `/falsifiable-tests` (or `/falsifiable-tests:falsifiable-tests`
+when installed as a plugin). Other agents trigger on the frontmatter description the
+same way.
 
 ## Contributing
 
