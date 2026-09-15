@@ -8,7 +8,14 @@ break the code under test, confirm the test turns red *for the right reason*, re
 
 ## Install
 
-Clone into your personal skills directory so it is available in every project:
+As a plugin (recommended — updates with `/plugin update`):
+
+```
+/plugin marketplace add ArnauFerma/falsifiable-tests
+/plugin install falsifiable-tests@falsifiable-tests
+```
+
+Or clone it straight into your personal skills directory:
 
 ```bash
 git clone https://github.com/ArnauFerma/falsifiable-tests ~/.claude/skills/falsifiable-tests
@@ -20,12 +27,29 @@ Or into a single project:
 git clone https://github.com/ArnauFerma/falsifiable-tests .claude/skills/falsifiable-tests
 ```
 
-It loads automatically when tests are written, modified or reviewed, and can be invoked
-directly with `/falsifiable-tests`.
+Either way it loads automatically when tests are written, modified or reviewed, and can
+be invoked directly with `/falsifiable-tests` (or `/falsifiable-tests:falsifiable-tests`
+when installed as a plugin).
+
+## Contributing
+
+Issues and pull requests are welcome, especially:
+
+- a stack reference for a framework not yet covered (`references/`), following the shape
+  of the existing ones: run exactly one test, read the failure correctly, stack-specific
+  mutations, framework traps, flakiness checks, restoring
+- results from running it on a real codebase, whether it found something or not — see
+  "What was measured" below for why that matters
+- vacuous-test patterns that are missing from `references/vacuous-patterns.md`
+
+Changes to `scripts/mutate.py` need a test in `scripts/test_mutate.py`, and the test
+needs its red proof — run the harness against itself with your change reverted as the
+mutation and confirm the new test is what catches it.
 
 ## What it contains
 
 ```
+.claude-plugin/             plugin and marketplace manifests
 SKILL.md                    the method: the red proof, degenerate returns, honesty rules
 references/php.md           PHPUnit and Pest
 references/java.md          JUnit 4/5 with Maven or Gradle

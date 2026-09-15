@@ -1,0 +1,11 @@
+{
+  "name": "falsifiable-tests",
+  "version": "1.1.0",
+  "description": "Prove a test can fail before trusting it: break the code under test, confirm the test turns red for the right reason, restore.",
+  "author": { "name": "Arnau Ferma", "url": "https://github.com/ArnauFerma" },
+  "homepage": "https://github.com/ArnauFerma/falsifiable-tests",
+  "repository": "https://github.com/ArnauFerma/falsifiable-tests",
+  "license": "Apache-2.0",
+  "keywords": ["testing", "mutation-testing", "test-quality", "false-negatives", "tdd", "pytest", "jest", "vitest", "junit", "phpunit"],
+  "skills": ["./"]
+}
