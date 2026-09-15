@@ -11,13 +11,13 @@ break the code under test, confirm the test turns red *for the right reason*, re
 Clone into your personal skills directory so it is available in every project:
 
 ```bash
-git clone https://github.com/FixemBCN/falsifiable-tests ~/.claude/skills/falsifiable-tests
+git clone https://github.com/ArnauFerma/falsifiable-tests ~/.claude/skills/falsifiable-tests
 ```
 
 Or into a single project:
 
 ```bash
-git clone https://github.com/FixemBCN/falsifiable-tests .claude/skills/falsifiable-tests
+git clone https://github.com/ArnauFerma/falsifiable-tests .claude/skills/falsifiable-tests
 ```
 
 It loads automatically when tests are written, modified or reviewed, and can be invoked
