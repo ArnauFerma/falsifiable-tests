@@ -15,6 +15,12 @@ As a plugin (recommended — updates with `/plugin update`):
 /plugin install falsifiable-tests@falsifiable-tests
 ```
 
+With the [skills.sh](https://skills.sh) CLI (also works for Cursor, Codex CLI and others):
+
+```bash
+npx skills add ArnauFerma/falsifiable-tests
+```
+
 Or clone it straight into your personal skills directory:
 
 ```bash
