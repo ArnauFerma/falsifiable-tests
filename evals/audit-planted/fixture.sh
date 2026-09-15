@@ -1,6 +1,7 @@
 #!/bin/bash
 set -e
-python3 -c "import pytest" 2>/dev/null || { echo "python3 cannot import pytest; install it (or prepend a venv to PATH) before running these evals" >&2; exit 1; }
+# The scaffold runs outside the agent's sandbox, so it can reach PyPI; the agent cannot.
+python3 -m venv .venv && .venv/bin/pip install -q pytest
 cat > orders.py <<'PY'
 COUPONS = {"TEN": 0.10, "HALF": 0.50}
 
@@ -40,4 +41,5 @@ def test_page_count_rejects_zero_per_page():
     # planted: name promises the rejection path, body tests the happy path
     assert page_count(10, 5) == 2
 PY
+printf '.venv/\n' > .gitignore
 git init -q && git add -A && git -c user.name=eval -c user.email=eval@example.com commit -qm "fixture"
