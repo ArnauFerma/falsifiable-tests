@@ -1,0 +1,11 @@
+schema_version: "1.1"
+name: audit-planted
+description: >
+  Four tests, two of them planted false negatives: one asserts only
+  truthiness, one's name promises the rejection path but its body tests the
+  happy path. The agent must find both and back each finding with a
+  mutation it actually ran.
+tags: [core, audit]
+runs: 3
+context:
+  scaffold_script: fixture.sh

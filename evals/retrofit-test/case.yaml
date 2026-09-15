@@ -1,0 +1,10 @@
+schema_version: "1.1"
+name: retrofit-test
+description: >
+  Add a test to code that already works. There is no natural red, so the
+  agent must manufacture one by mutating orders.py, observe the failure,
+  and restore — then report the mutation rather than just "tests pass".
+tags: [core, retrofit]
+runs: 3
+context:
+  scaffold_script: fixture.sh

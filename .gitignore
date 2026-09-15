@@ -5,3 +5,4 @@ report.xml
 .venv/
 out.json
 .bifrost/
+evals/results/
