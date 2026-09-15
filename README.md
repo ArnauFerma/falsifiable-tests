@@ -85,7 +85,9 @@ and reports which tests stayed green under every mutation (vacuity candidates), 
 mutations no test caught (defects that could ship — or equivalent mutants), and which
 mutations only broke the plumbing (errors, vanished tests: not counted as catches,
 because a red for the wrong reason is not a proof). It sets `PYTHONDONTWRITEBYTECODE`
-so a size-preserving mutation cannot leave a stale `.pyc` behind. Any suite that emits JUnit XML gets per-test resolution — PHPUnit via
+so a size-preserving mutation cannot leave a stale `.pyc` behind, bounds each run with
+`--timeout` so a mutation that creates an infinite loop cannot stall the audit, and
+restores on Ctrl-C and SIGTERM alike. Any suite that emits JUnit XML gets per-test resolution — PHPUnit via
 `--log-junit`, Maven/Gradle via surefire reports, Vitest/Jest via a junit reporter,
 pytest via `--junit-xml`.
 

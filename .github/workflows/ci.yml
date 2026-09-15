@@ -24,7 +24,7 @@ jobs:
 
       - name: Self-mutation (every planted defect must be caught by the tests)
         run: |
-          python skills/falsifiable-tests/scripts/mutate.py --project . --spec skills/falsifiable-tests/scripts/self-mutations.json \
+          python skills/falsifiable-tests/scripts/mutate.py --project . --spec skills/falsifiable-tests/scripts/self-mutations.json --timeout 300 \
             --test-cmd "python -m pytest skills/falsifiable-tests/scripts/test_mutate.py -q -p no:cacheprovider --junit-xml=/tmp/self.xml" \
             --junit /tmp/self.xml --json-out /tmp/self.json
           python - <<'PY'

@@ -106,6 +106,10 @@ python3 <skill dir>/scripts/mutate.py --project . --spec mutations.json \
     --test-cmd "python3 -m pytest -q --junit-xml=report.xml" --junit report.xml
 ```
 
+Add `--timeout SECONDS` when a mutation could turn a bounded loop into an unbounded one
+(anything of the shape "retry until valid" whose valid path you are breaking) — a timed-out
+run is reported separately, as neither caught nor survived, and the audit continues.
+
 `<skill dir>` is the directory this SKILL.md lives in — as a Claude Code plugin that is
 `${CLAUDE_PLUGIN_ROOT}/skills/falsifiable-tests`. The harness runs from any cwd; only
 `--project` has to point at the code under test.

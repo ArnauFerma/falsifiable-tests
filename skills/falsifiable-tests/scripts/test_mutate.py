@@ -247,6 +247,97 @@ def test_subject_is_restored_when_test_command_dies_mid_run(project):
     assert "DID NOT RUN" in proc.stdout
 
 
+def test_hanging_mutation_times_out_and_audit_continues(project):
+    # The mutation makes apply_coupon spin forever; with --timeout the run is
+    # killed, reported as timed out (neither caught nor survived), the subject is
+    # restored, and the next mutation still runs.
+    hang = {"name": "hang", "file": "orders.py",
+            "find": "return round(subtotal * (1 - COUPONS[code]), 2)",
+            "replace": "\n    while True:\n        pass"}
+    before = sha(project / "orders.py")
+    proc, result = run_harness(project, [hang, EQUIVALENT], extra=["--timeout", "8"])
+    assert proc.returncode == 0
+    assert result["statuses"] == {"hang": "timeout", "clamp boundary (equivalent)": "survived"}
+    assert result["timed_out_mutations"] == ["hang"]
+    assert "hang" not in result["survived_mutations"]
+    assert "TIMED OUT" in proc.stdout
+    assert sha(project / "orders.py") == before
+    # a killed run writes no JUnit file, so every baseline test is absent from it
+    assert set(result["matrix"]["hang"].values()) == {"absent"}
+
+
+def test_timeout_kills_the_whole_process_tree(project):
+    # The test command spawns a grandchild that would outlive a kill aimed only
+    # at the shell. It writes its own pid so the test can check that exact process.
+    script = project / "spawner.py"
+    script.write_text(
+        "import subprocess, sys\n"
+        "child = subprocess.Popen([sys.executable, '-c', "
+        "'import os, time; open(\"grandchild.pid\", \"w\").write(str(os.getpid())); time.sleep(60)'])\n"
+        "child.wait()\n")
+    proc, result = run_harness(project, [COUPON_IGNORED],
+                               test_cmd=f'"{sys.executable}" spawner.py', junit=None,
+                               extra=["--timeout", "3", "--skip-final-run"])
+    assert "BASELINE TIMED OUT" in proc.stdout
+    assert proc.returncode == 1
+    import os, time
+    pid = int((project / "grandchild.pid").read_text())
+    deadline = time.time() + 5
+    while time.time() < deadline:
+        try:
+            os.kill(pid, 0)
+        except ProcessLookupError:
+            break
+        # still exists: may be a zombie awaiting reap, or genuinely alive
+        if open(f"/proc/{pid}/stat").read().split()[2] == "Z":
+            break
+        time.sleep(0.1)
+    else:
+        os.kill(pid, 9)
+        raise AssertionError(f"grandchild {pid} survived the timeout kill")
+
+
+def test_sigterm_mid_run_restores_the_subject(project):
+    # Start the harness with a slow test command, SIGTERM it while a mutation is
+    # applied, and check the subject is byte-identical afterwards.
+    import os, signal, time
+    before = sha(project / "orders.py")
+    slow = project / "slow_cmd.py"
+    slow.write_text(
+        "import os, sys, time, subprocess\n"
+        "n = int(open('calls').read()) + 1 if os.path.exists('calls') else 1\n"
+        "open('calls', 'w').write(str(n))\n"
+        "if n == 1:\n"
+        f"    sys.exit(subprocess.call({PYTEST_CMD!r}, shell=True))\n"
+        "time.sleep(30)\n")
+    spec = project / "mutations.json"
+    spec.write_text(json.dumps([COUPON_IGNORED]))
+    proc = subprocess.Popen(
+        [sys.executable, str(HARNESS), "--project", str(project), "--spec", str(spec),
+         "--test-cmd", f'"{sys.executable}" slow_cmd.py', "--junit", "report.xml"],
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    deadline = time.time() + 20
+    while time.time() < deadline:
+        if (project / "calls").exists() and (project / "calls").read_text() == "2" \
+                and "return round(subtotal, 2)" in (project / "orders.py").read_text():
+            break
+        time.sleep(0.1)
+    else:
+        proc.kill()
+        raise AssertionError("harness never reached the mutated run")
+    proc.send_signal(signal.SIGTERM)
+    out, _ = proc.communicate(timeout=20)
+    assert sha(project / "orders.py") == before, out
+    assert "RESTORATION FAILED" not in out
+    # the in-flight suite run must not be left behind as an orphan
+    time.sleep(0.3)
+    left = subprocess.run(["pgrep", "-f", "slow_cmd.py"], capture_output=True, text=True).stdout.split()
+    left = [pid for pid in left if os.path.exists(f"/proc/{pid}") and open(f"/proc/{pid}/stat").read().split()[2] != "Z"]
+    for pid in left:
+        os.kill(int(pid), 9)
+    assert not left, f"suite run survived the harness: {left}"
+
+
 def test_bytecode_writing_is_disabled_for_test_runs(project):
     probe = project / "probe.py"
     probe.write_text("import os, sys\n"

@@ -53,10 +53,17 @@ not as caught — the skill's rule is that a red for the wrong reason is not a
 proof. Likewise, a test that was absent or errored under a mutation is never
 counted as having stayed green under it.
 
+TIMEOUTS
+
+Pass --timeout SECONDS to bound each suite run. A mutation that turns a bounded
+loop into an unbounded one (a "retry until valid" whose valid path you just
+removed) would otherwise hang the audit forever. A timed-out run is reported in
+its own list: it is neither a catch nor a survival.
+
 SAFETY
 
 Every targeted file is copied before the first mutation and restored after each
-run, including on Ctrl-C or an unhandled error. After the last mutation the
+run, including on Ctrl-C, SIGTERM, or an unhandled error. After the last mutation the
 suite is run once more against the restored tree, and every touched file is
 hash-checked; if any file does not match its original, the script says so
 loudly and tells you where the backup is. Never leave a mutation in the tree.
@@ -70,6 +77,7 @@ import hashlib
 import json
 import os
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -82,6 +90,17 @@ from pathlib import Path
 PASS, FAIL, ERROR, SKIP, ABSENT = "pass", "fail", "error", "skip", "absent"
 
 OUTPUT_TAIL_LINES = 25
+
+# The suite run currently in flight, so a SIGTERM to the harness can take it down too.
+_current_run: subprocess.Popen | None = None
+
+
+def _kill_current_run() -> None:
+    if _current_run is not None and _current_run.poll() is None:
+        try:
+            os.killpg(_current_run.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
 
 
 def sha256(path: Path) -> str:
@@ -128,6 +147,7 @@ class RunResult:
     output: str
     junit_present: bool
     junit_expected: bool = False
+    timed_out: bool = False
     per_test: dict[str, str] = field(default_factory=dict)
 
     @property
@@ -170,20 +190,43 @@ def parse_junit(junit: Path) -> dict[str, str]:
     return per_test
 
 
-def run_suite(test_cmd: str, project: Path, junit: Path | None) -> RunResult:
+def run_suite(
+    test_cmd: str, project: Path, junit: Path | None, timeout: float | None = None
+) -> RunResult:
     if junit and junit.exists():
         junit.unlink()
 
     env = dict(os.environ, PYTHONDONTWRITEBYTECODE="1")
-    result = subprocess.run(
-        test_cmd, shell=True, cwd=project, capture_output=True, text=True, env=env
+    # A mutation can turn a bounded loop into an unbounded one ("retry until the
+    # answer is valid" with the answer path broken), and a suite that never returns
+    # would stall the whole audit. Run in its own process group so a timeout can
+    # kill the test runner and everything it spawned.
+    proc = subprocess.Popen(
+        test_cmd, shell=True, cwd=project, env=env,
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+        start_new_session=True,
     )
+    global _current_run
+    _current_run = proc
+    timed_out = False
+    try:
+        output, _ = proc.communicate(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        timed_out = True
+        try:
+            os.killpg(proc.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        output, _ = proc.communicate()
+    finally:
+        _current_run = None
     junit_present = bool(junit and junit.exists())
     run = RunResult(
-        returncode=result.returncode,
-        output=(result.stdout or "") + (result.stderr or ""),
+        returncode=proc.returncode,
+        output=output or "",
         junit_present=junit_present,
         junit_expected=junit is not None,
+        timed_out=timed_out,
     )
     if junit_present:
         run.per_test = parse_junit(junit)
@@ -236,6 +279,9 @@ def describe(run: RunResult, baseline: dict[str, str]) -> tuple[str, str]:
 
     status_key is one of: survived, caught, plumbing, red, not_run.
     """
+    if run.timed_out:
+        return "timeout", ("TIMED OUT - the mutated suite never finished; probably an "
+                           "unbounded loop. Not a catch; pick a survivable mutation.")
     if not run.command_ran:
         return "not_run", "TEST COMMAND DID NOT RUN - nothing measured"
     if run.suite_passed:
@@ -266,6 +312,9 @@ def main() -> int:
                         help="JUnit XML the test command writes; enables per-test resolution")
     parser.add_argument("--json-out", type=Path, default=None,
                         help="Write the full result matrix here")
+    parser.add_argument("--timeout", type=float, default=None, metavar="SECONDS",
+                        help="Kill a suite run that exceeds this; the mutation is reported "
+                             "as timed out and the audit continues (default: no limit)")
     parser.add_argument("--skip-final-run", action="store_true",
                         help="Do not re-run the suite after the last restore (saves one run; "
                              "the hash check still runs)")
@@ -276,7 +325,11 @@ def main() -> int:
     mutations = json.loads(args.spec.read_text(encoding="utf-8"))
 
     print("Baseline run (the suite must be green before mutating)...")
-    baseline = run_suite(args.test_cmd, project, junit)
+    baseline = run_suite(args.test_cmd, project, junit, args.timeout)
+    if baseline.timed_out:
+        print(f"  BASELINE TIMED OUT after {args.timeout:g}s. Raise --timeout or scope the test command.")
+        print(baseline.tail())
+        return 1
     if not baseline.command_ran:
         print(f"  TEST COMMAND DID NOT RUN (exit {baseline.returncode}"
               f"{', no JUnit file written' if baseline.junit_expected else ''}).")
@@ -300,13 +353,22 @@ def main() -> int:
     matrix: dict[str, dict[str, str]] = {}
     statuses: dict[str, str] = {}
 
+    # Ctrl-C raises KeyboardInterrupt and reaches the finally below; a plain
+    # SIGTERM (kill, timeout(1), a CI runner cancelling) does not — it ends the
+    # interpreter without unwinding, and would leave the mutation in the tree.
+    def _terminate(signum, frame):
+        _kill_current_run()
+        raise SystemExit(128 + signum)
+
+    signal.signal(signal.SIGTERM, _terminate)
+
     try:
         for mutation in mutations:
             name = mutation["name"]
             target = ws.protect(mutation["file"])
             try:
                 apply_mutation(target, mutation["find"], mutation["replace"])
-                run = run_suite(args.test_cmd, project, junit)
+                run = run_suite(args.test_cmd, project, junit, args.timeout)
             finally:
                 ws.restore_all()
 
@@ -315,7 +377,7 @@ def main() -> int:
             status, line = describe(run, baseline_tests)
             statuses[name] = status
             print(f"  {name:<50} {line}")
-            if status == "not_run":
+            if status in ("not_run", "timeout"):
                 print(run.tail())
     finally:
         ws.restore_all()
@@ -359,6 +421,13 @@ def main() -> int:
         for m in plumbing:
             print("  " + m)
 
+    timed_out = [m for m, s in statuses.items() if s == "timeout"]
+    if timed_out:
+        print(f"\nMutations that timed out ({len(timed_out)}) - not caught, not survived; "
+              "choose a survivable mutation:")
+        for m in timed_out:
+            print("  " + m)
+
     not_run = [m for m, s in statuses.items() if s == "not_run"]
     if not_run:
         print(f"\nMutations where the test command did not run ({len(not_run)}):")
@@ -368,8 +437,8 @@ def main() -> int:
     final_ok = True
     if not args.skip_final_run:
         print("\nFinal run against the restored tree...")
-        final = run_suite(args.test_cmd, project, junit)
-        final_ok = final.command_ran and final.suite_passed
+        final = run_suite(args.test_cmd, project, junit, args.timeout)
+        final_ok = final.command_ran and final.suite_passed and not final.timed_out
         if final_ok:
             print("  green.")
         else:
@@ -384,6 +453,7 @@ def main() -> int:
                         "survived_mutations": survived,
                         "plumbing_mutations": plumbing,
                         "not_run_mutations": not_run,
+                        "timed_out_mutations": timed_out,
                         "final_run_green": final_ok if not args.skip_final_run else None},
                        indent=2),
             encoding="utf-8",
