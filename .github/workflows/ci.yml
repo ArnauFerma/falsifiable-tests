@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  harness:
+    name: harness tests + self-mutation
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ["3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: pip install pytest
+
+      - name: Harness tests
+        run: python -m pytest scripts/test_mutate.py -q -p no:cacheprovider
+
+      - name: Self-mutation (every planted defect must be caught by the tests)
+        run: |
+          python scripts/mutate.py --project . --spec scripts/self-mutations.json \
+            --test-cmd "python -m pytest scripts/test_mutate.py -q -p no:cacheprovider --junit-xml=/tmp/self.xml" \
+            --junit /tmp/self.xml --json-out /tmp/self.json
+          python - <<'PY'
+          import json, sys
+          r = json.load(open("/tmp/self.json"))
+          bad = r["survived_mutations"] + r["plumbing_mutations"] + r["not_run_mutations"]
+          if bad:
+              print("Mutations the tests did not catch on an assertion:", *bad, sep="\n  ")
+              sys.exit(1)
+          print(f"All {len(r['matrix'])} planted defects caught.")
+          PY
+
+      - name: Working tree is clean after the run
+        run: git diff --exit-code
+
+  manifests:
+    name: plugin manifests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          python -m json.tool .claude-plugin/plugin.json >/dev/null
+          python -m json.tool .claude-plugin/marketplace.json >/dev/null
+          python scripts/check_frontmatter.py SKILL.md

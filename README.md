@@ -1,5 +1,7 @@
 # falsifiable-tests
 
+[![CI](https://github.com/ArnauFerma/falsifiable-tests/actions/workflows/ci.yml/badge.svg)](https://github.com/ArnauFerma/falsifiable-tests/actions/workflows/ci.yml)
+
 A Claude Code skill. A test that has never been seen to fail is not evidence — it is a
 claim about the code that has itself never been tested.
 
@@ -67,6 +69,7 @@ references/vacuous-patterns.md  field guide to tests that cannot fail
 references/audit.md         auditing an existing suite, with a report template
 scripts/mutate.py           batch harness: many mutations, which tests noticed, safe restore
 scripts/test_mutate.py      the harness's own tests (python3 -m pytest scripts/ -q)
+scripts/self-mutations.json defects planted in the harness by CI; every one must be caught
 ```
 
 `scripts/mutate.py` is language-agnostic. It edits the real file, runs your real test
