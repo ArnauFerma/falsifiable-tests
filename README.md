@@ -95,6 +95,9 @@ pytest via `--junit-xml`.
 
 ## Where it comes from
 
+The long version, with the tomlkit finding that opens it, is
+[*A test that has never failed is a claim, not evidence*](docs/red-for-the-right-reason.md).
+
 The method predates the skill. It is how the tests in
 [MCP-Bifrost](https://github.com/ArnauFerma/MCP-Bifrost) — an MCP server that
 delegates code edits to a worker model and validates them through a chain of gates —
