@@ -79,8 +79,25 @@ so a size-preserving mutation cannot leave a stale `.pyc` behind. Any suite that
 `--log-junit`, Maven/Gradle via surefire reports, Vitest/Jest via a junit reporter,
 pytest via `--junit-xml`.
 
+## Where it comes from
+
+The method predates the skill. It is how the tests in
+[MCP-Bifrost](https://github.com/ArnauFerma/MCP-Bifrost) — an MCP server that
+delegates code edits to a worker model and validates them through a chain of gates —
+are written: several hundred tests, each one observed red under a deliberate break
+before being trusted. The practice started after finding that two of the project's
+first fifteen tests were false greens: they printed their failures and never exited
+non-zero, so any exit-code-based runner would have counted them as passing forever
+(the account is in Bifrost's
+[critical review](https://github.com/ArnauFerma/MCP-Bifrost/blob/main/docs/critical-review.md)).
+
+The skill exists so that practice can be installed instead of re-explained at the start
+of every session.
+
 ## What was measured
 
+The with-skill versus without-skill comparison below is a separate, smaller thing: it
+asks whether the *skill text* changes what a model does, not whether the method works.
 Developed against a benchmark of small fixtures with deliberately vacuous tests planted
 in them, run with and without the skill. Reported plainly because the skill asks the
 same of its users:
@@ -96,9 +113,10 @@ require at least N+2 runs of the suite (baseline, one per mutation, one after th
 restore), and reimplementing a broken copy of a function is explicitly not a mutation,
 because the tests never import it.
 
-**Limitations.** One run per cell, no repeats, so individual point differences are
-within sampling noise. The fixtures are small and Python-only. The skill's guidance on
-budget and sampling for large suites has never been measured at all. The evaluation was
+**Limitations of the benchmark.** One run per cell, no repeats, so individual point
+differences are within sampling noise. The benchmark fixtures are small and Python-only.
+The skill's guidance on budget and sampling for large suites has not been benchmarked,
+although it is the guidance the Bifrost suite is maintained under. The evaluation was
 designed and graded by the same agent that wrote the skill; the code-correctness checks
 were independent of the agents' own tests, but the judgement calls were not blind.
 
@@ -107,4 +125,4 @@ is more informative than the numbers above.
 
 ## Licence
 
-Apache 2.0. See `LICENSE` and `NOTICE`.
+MIT. Use it, copy it, fold it into another skill — just keep the attribution line.

@@ -1,6 +1,6 @@
 {
   "name": "falsifiable-tests",
-  "owner": { "name": "Arnau Ferma", "url": "https://github.com/ArnauFerma" },
+  "owner": { "name": "Arnau Ferrerons Manich", "url": "https://github.com/ArnauFerma" },
   "metadata": {
     "description": "Single-plugin marketplace for the falsifiable-tests skill."
   },
@@ -10,10 +10,10 @@
       "source": "./",
       "description": "Prove a test can fail before trusting it: break the code under test, confirm the test turns red for the right reason, restore.",
       "version": "1.1.0",
-      "author": { "name": "Arnau Ferma", "url": "https://github.com/ArnauFerma" },
+      "author": { "name": "Arnau Ferrerons Manich", "url": "https://github.com/ArnauFerma" },
       "homepage": "https://github.com/ArnauFerma/falsifiable-tests",
       "repository": "https://github.com/ArnauFerma/falsifiable-tests",
-      "license": "Apache-2.0",
+      "license": "MIT",
       "keywords": ["testing", "mutation-testing", "test-quality", "false-negatives", "tdd"],
       "category": "testing",
       "skills": ["./"]
