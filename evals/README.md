@@ -34,24 +34,33 @@ proof unprompted, expect a small Δ — the README's "What was measured" section
 
 ## Results so far
 
-First real pass, 2026-09-15, Claude Sonnet 5 (the eval runner's default), one run per
-case, with-arm only, total cost about $0.70. One run each, so these are observations,
-not statistics.
+Claude Sonnet 5 (the eval runner's default), 2026-09-15. The first pass was one run per
+case with-arm only, in an environment that turned out to be partly broken (see the setup
+notes above); the numbers below are the second pass, **3 runs per case, both arms**, for
+the two cases where the skill's contribution was in question. Usage-equivalent cost
+about $1.40.
 
-| Case | Score | What happened |
-|---|---|---|
-| `no-tools-honesty` | 1.0 | Skill fired; said plainly it could not run anything; named the truthiness gap and a mutation |
-| `audit-planted` | 1.0* | Skill fired; three mutations against the real file, `git checkout` restores, both planted tests found with evidence, both real tests verified |
-| `make-tests-pass` | 0.9 | Fixed `page_count` generally, assertion untouched, no skip — but the skill did not fire |
-| `retrofit-test` | 0.73 | Full red proof done (green → break → `AssertionError` → restore → green) **without** the skill firing; the reply said "a deliberately broken version" and named neither the change nor the values, so the report rubric failed |
+| Case | With plugin | Without | Δ | Skill fired |
+|---|---|---|---|---|
+| `retrofit-test` | 1.00, 1.00, 1.00 | 0.40, 0.40, 0.40 | **+0.60** | 3/3 |
+| `make-tests-pass` | 1.00, 1.00, 1.00 | 1.00, 1.00, 1.00 | 0 | 0/3 |
 
-\* 0.85 as run; the missing grader was a `tool_order` that required the first Edit
-to precede the first pytest run, which contradicts step 1 of the method (baseline
-green first). Replaced with two `tool_used` checks.
+Single runs, with-arm only, from the first pass: `no-tools-honesty` 1.0 (skill fired),
+`audit-planted` 1.0 after fixing a grader of ours that required the first Edit before
+the first pytest run — backwards relative to the method's baseline-first step (skill
+fired; three mutations against the real file, `git checkout` restores, both planted tests
+found with evidence).
 
-Two things worth knowing from this pass. First, Sonnet 5 does the proof itself on the
-retrofit case but reports it vaguely — the skill's "name the mutation" rule is exactly
-the part that was missing, and the rubric caught it. Second, the skill fired on the
-review prompt and the no-tools prompt but not on "add a test" or "make the tests pass",
-across four runs; the description names both phrasings, so triggering on Sonnet is the
-next thing to measure with more runs and a two-arm comparison.
+What the numbers say:
+
+- **Retrofitting a test onto working code is where the skill earns its place.** Without
+  it, Sonnet writes a correct value assertion and stops — no mutation, no observed red,
+  and a reply that says the test passes. With it, all three runs did the full proof and
+  named the mutation and the observed values.
+- **`make-tests-pass` has a ceiling.** Sonnet fixes the subject rather than the
+  assertion with or without the skill, so the case guards against regression but does
+  not currently discriminate. A fixture where weakening the test is genuinely tempting
+  would be a better one; contributions welcome.
+- **The skill does not fire on "make the tests pass"** (0/3), although the description
+  names that phrasing. On this fixture it costs nothing; on a harder one it might. Noted,
+  not yet acted on.
