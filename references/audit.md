@@ -68,6 +68,11 @@ The random sample matters. If you only mutate suspicious tests, the report descr
 the suspects, not the suite — and the reassuring finding ("the sampled ordinary tests
 all discriminated") is exactly what the user needs to know.
 
+`scripts/mutate.py` classifies each mutation as caught, survived, or "broke the
+plumbing" (errors and tests that vanished from the report). Only the first is
+evidence. Survived needs the equivalent-mutant check before it becomes a finding;
+plumbing means shrink the mutation and rerun.
+
 Batch efficiently: one mutation can prove several tests at once when they cover the
 same behaviour. Note which tests went red and which stayed green under that mutation —
 a test that stays green while its siblings go red is the interesting one.
@@ -79,7 +84,7 @@ Every test examined gets exactly one:
 | Verdict | Meaning |
 |---|---|
 | **Verified** | Went red under a targeted mutation, on the assertion, for the right reason. Restored green. |
-| **Vacuous** | Stayed green under a mutation that violates its stated claim. It cannot detect what its name says it detects. |
+| **Vacuous** | Stayed green under a mutation that violates its stated claim *and* that demonstrably changes the output for the test's input (i.e. not an equivalent mutant — see `mutations.md`). It cannot detect what its name says it detects. |
 | **Weak** | Went red, but only under a blunt mutation; survives the targeted one. Detects catastrophe, not regression. |
 | **Flaky** | Result changed between identical runs, or between alone and in-suite. |
 | **Unverifiable** | No mutation could isolate it — subject not editable, test does not reach the code, environment cannot run it. Explain which. |

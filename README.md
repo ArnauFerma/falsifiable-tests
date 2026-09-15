@@ -11,13 +11,13 @@ break the code under test, confirm the test turns red *for the right reason*, re
 Clone into your personal skills directory so it is available in every project:
 
 ```bash
-git clone <this-repo-url> ~/.claude/skills/falsifiable-tests
+git clone https://github.com/FixemBCN/falsifiable-tests ~/.claude/skills/falsifiable-tests
 ```
 
 Or into a single project:
 
 ```bash
-git clone <this-repo-url> .claude/skills/falsifiable-tests
+git clone https://github.com/FixemBCN/falsifiable-tests .claude/skills/falsifiable-tests
 ```
 
 It loads automatically when tests are written, modified or reviewed, and can be invoked
@@ -36,12 +36,16 @@ references/mutations.md     how to choose a mutation, and what to do when none w
 references/vacuous-patterns.md  field guide to tests that cannot fail
 references/audit.md         auditing an existing suite, with a report template
 scripts/mutate.py           batch harness: many mutations, which tests noticed, safe restore
+scripts/test_mutate.py      the harness's own tests (python3 -m pytest scripts/ -q)
 ```
 
 `scripts/mutate.py` is language-agnostic. It edits the real file, runs your real test
-command, restores from a hash-checked backup, and reports which tests stayed green under
-every mutation (vacuity candidates) and which mutations no test caught (defects that
-could ship). Any suite that emits JUnit XML gets per-test resolution — PHPUnit via
+command, restores from a hash-checked backup, re-runs the suite on the restored tree,
+and reports which tests stayed green under every mutation (vacuity candidates), which
+mutations no test caught (defects that could ship — or equivalent mutants), and which
+mutations only broke the plumbing (errors, vanished tests: not counted as catches,
+because a red for the wrong reason is not a proof). It sets `PYTHONDONTWRITEBYTECODE`
+so a size-preserving mutation cannot leave a stale `.pyc` behind. Any suite that emits JUnit XML gets per-test resolution — PHPUnit via
 `--log-junit`, Maven/Gradle via surefire reports, Vitest/Jest via a junit reporter,
 pytest via `--junit-xml`.
 
@@ -58,8 +62,9 @@ same of its users:
 | Claude Haiku 4.5, current version | 16/17 assertions against 11/17 for no skill. The false-verification failure mode did not recur. |
 
 The fix that closed it was making the proof countable rather than exhorted: N mutations
-require at least N+1 runs of the suite, and reimplementing a broken copy of a function
-is explicitly not a mutation, because the tests never import it.
+require at least N+2 runs of the suite (baseline, one per mutation, one after the final
+restore), and reimplementing a broken copy of a function is explicitly not a mutation,
+because the tests never import it.
 
 **Limitations.** One run per cell, no repeats, so individual point differences are
 within sampling noise. The fixtures are small and Python-only. The skill's guidance on

@@ -101,6 +101,27 @@ input proves only that the comparison operator works. `assert result == 108` cha
 `assert result == 109` will go red on any implementation — that is not a proof of
 anything.
 
+## Equivalent mutants
+
+A mutation can survive for a reason that has nothing to do with the test: the change
+does not alter what the code returns for the inputs the test uses.
+
+```python
+def clamp(x, limit):
+    return x if x < limit else limit     # mutate `<` to `<=`
+```
+
+For `clamp(5, 5)` both versions return 5. The test survives, and it is not vacuous —
+the mutation was empty. This is called an *equivalent mutant*, and it is the main
+source of false alarms in an audit, because a survived mutation looks exactly like a
+vacuous test in every report, including the one `scripts/mutate.py` prints.
+
+Before recording a test as vacuous, evaluate the mutated subject on the test's own
+input, by hand or in a REPL, and confirm the result actually differs from the original.
+If it does not, the finding is "this mutation was equivalent — chose a different one",
+not "this test cannot fail". Boundary flips (`<` / `<=`) and ordering changes on tiny
+inputs are the usual culprits.
+
 ## When no mutation works
 
 Some tests genuinely cannot be falsified in place, and that is a finding, not a
@@ -110,6 +131,9 @@ failure of the method:
   Nothing you break in the real subject can affect it. This test is decorative — say so.
 - **The subject is not editable.** Vendored, compiled, remote. Use a fixture-side
   mutation instead, or mark unverifiable and explain why.
+- **Every mutation you can think of is equivalent.** The test's inputs never reach
+  the behaviour the mutation targets. That is a finding about the test's *inputs* —
+  it needs a case that exercises the boundary — rather than about its assertion.
 - **The mutation breaks the world.** If the only way to violate the claim also breaks
   compilation or fifty other tests, note it, keep the smallest variant you managed,
   and report what the mutation did and did not isolate.

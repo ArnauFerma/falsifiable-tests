@@ -36,8 +36,10 @@ Two failure modes matter, and they are not symmetric:
 Four steps, applied to the specific test you just wrote or are auditing — not to the
 whole suite.
 
-**1. Green.** Run the test against correct code. It passes. This proves nothing on its
-own; it is the baseline you will restore to.
+**1. Green.** Run the test against correct code. It passes — and the runner's count
+line says it ran: `1 passed`, not `1 skipped`, `no tests ran` or `Tests run: 0`. A
+filter that matches nothing reports success in every framework. This proves nothing
+on its own; it is the baseline you will restore to.
 
 **2. Break the subject.** Edit the defect into *the file the tests actually import* —
 never into the test, and never into a copy. It must violate exactly the behaviour this
@@ -52,13 +54,22 @@ a fixture crash proves nothing about the assertion — only that the file still 
 executed. Read the actual failure output and confirm it names the assertion and shows
 the expected-vs-actual you care about.
 
-**4. Restore and re-confirm green.** Undo the mutation, run again, confirm it passes.
-This closes the loop and guarantees no broken code is left behind. Never skip it, and
-never leave a mutation in the working tree — if you are interrupted mid-proof,
-restoring is the first thing to do on resuming.
+**4. Restore and re-confirm green.** Undo the mutation — from `git checkout` or a
+copy taken beforehand, never by retyping the line from memory — run again, confirm it
+passes. This closes the loop and guarantees no broken code is left behind. Never skip
+it, and never leave a mutation in the working tree — if you are interrupted mid-proof,
+restoring is the first thing to do on resuming. When chaining several mutations, one
+green run after the final restore is enough, provided every intermediate restore was
+from a known-good copy.
 
-If step 3 does not produce a red, the test is vacuous with respect to that behaviour.
-Fix the test, then redo the proof from step 1.
+If step 3 does not produce a red, one of two things is true, and you have to decide
+which by reading: either the test is vacuous with respect to that behaviour, or the
+mutation is an **equivalent mutant** — a change that has no observable effect for the
+inputs the test uses (`<` → `<=` when the test never hits the boundary; reversing a
+sort of one element). Check that the mutated code really does return something
+different for the test's input before blaming the test. If it does, the test is
+vacuous: fix it, then redo the proof from step 1. If it does not, pick a mutation that
+actually changes the output.
 
 ### The shortcut that is not a proof
 
@@ -77,11 +88,12 @@ looks. If the assertion would obviously fail, running it costs seconds and turns
 opinion into evidence. Every proof claimed in your reply must correspond to a suite
 run that actually happened.
 
-**Arithmetic that settles it:** proving N mutations requires at least N+1 runs of the
-suite — one baseline, one per mutation. Before writing "I verified these tests can
-fail", count the runs you actually performed. If the count does not reach N+1, you did
-not verify N mutations, and saying so would be the exact false confidence this skill
-exists to prevent. Report what you really ran, or run the rest.
+**Arithmetic that settles it:** proving N mutations requires at least N+2 runs of the
+suite — one baseline, one per mutation, one green after the last restore. Before
+writing "I verified these tests can fail", count the runs you actually performed. If
+the count does not reach N+2, you did not verify N mutations, and saying so would be
+the exact false confidence this skill exists to prevent. Report what you really ran,
+or run the rest.
 
 ### Doing it mechanically
 
@@ -95,8 +107,10 @@ python scripts/mutate.py --project . --spec mutations.json \
 ```
 
 It reports which tests noticed each mutation, which tests noticed nothing (vacuity
-candidates), and which mutations nothing caught (defects that could ship today). Read
-the file's docstring for the spec format. Doing it by hand stays fine for a single
+candidates), which mutations nothing caught (defects that could ship, or equivalent
+mutants — it cannot tell, you read), and which mutations only broke the plumbing
+(errors and vanished tests, which it refuses to count as catches). It finishes with a
+green run against the restored tree. Read the file's docstring for the spec format. Doing it by hand stays fine for a single
 targeted proof — the harness is for when the count grows and bookkeeping starts to
 slip.
 
@@ -127,12 +141,39 @@ When writing a new test, you get the red proof for free by writing the test *bef
 the implementation or the fix, and watching it fail. That initial red **is** step 3 —
 no mutation needed, and it is stronger evidence because nothing was tuned to it yet.
 
+The same rule about *reasons* applies, though. If the subject does not exist yet, the
+first red is an `ImportError` or `NameError`, and step 3 has already said what that is
+worth: nothing. Put a stub in place — the function exists and returns `None` — so that
+the red you observe is the assertion rejecting `None`. Only then is it a proof.
+
 Retrofitting tests onto code that already works is where the mutation step becomes
 mandatory, because there is no natural red anywhere in the process.
 
 For a bug fix: write the test that reproduces the bug, watch it fail on the unfixed
 code, then fix. If it does not fail on the unfixed code, the bug has not been
 reproduced and the fix is aimed at a guess.
+
+## When you were asked to make a red test pass
+
+"Make the tests pass" is the trigger for the most common way vacuous tests get
+manufactured, and it is not a mutation — it is editing the test until it stops
+complaining. The rule:
+
+- **The fix goes in the subject.** If the test is red because the behaviour is wrong,
+  change the behaviour. Do not loosen the assertion, widen a `raises` to `Exception`,
+  swap `==` for `is not None`, add a skip marker, or wrap the assertion in a `try`.
+- **If the test itself is wrong, say so and fix it as a new test.** Sometimes the
+  assertion really is mistaken. Changing it is legitimate, but the result is a new
+  test with no track record — it needs its own red proof before it counts, exactly as
+  if you had just written it.
+- **Never special-case the test in the subject.** A branch that detects the test's
+  input and returns the expected value makes the test green and the behaviour
+  untested. This is a mutation in reverse, and the same four-step proof exposes it:
+  break the general case and watch the test stay green.
+
+Before reporting "the tests pass", check which file your diff touched. If it is the
+test file and the user asked for the code to be fixed, you have not done what they
+asked.
 
 ## What to say afterwards
 
