@@ -4,3 +4,4 @@ __pycache__/
 report.xml
 .venv/
 out.json
+.bifrost/

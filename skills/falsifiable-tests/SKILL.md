@@ -102,9 +102,13 @@ by hand. It cannot take the shortcut above, because it edits the real file, runs
 real command, and restores from a hash-checked backup:
 
 ```bash
-python scripts/mutate.py --project . --spec mutations.json \
-    --test-cmd "python -m pytest -q --junit-xml=report.xml" --junit report.xml
+python3 <skill dir>/scripts/mutate.py --project . --spec mutations.json \
+    --test-cmd "python3 -m pytest -q --junit-xml=report.xml" --junit report.xml
 ```
+
+`<skill dir>` is the directory this SKILL.md lives in — as a Claude Code plugin that is
+`${CLAUDE_PLUGIN_ROOT}/skills/falsifiable-tests`. The harness runs from any cwd; only
+`--project` has to point at the code under test.
 
 It reports which tests noticed each mutation, which tests noticed nothing (vacuity
 candidates), which mutations nothing caught (defects that could ship, or equivalent

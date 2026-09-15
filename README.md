@@ -29,17 +29,14 @@ npx skills add ArnauFerma/falsifiable-tests                 # pick agents intera
 npx skills add ArnauFerma/falsifiable-tests -a cursor -a codex -a github-copilot -g
 ```
 
-Or clone it straight into your personal skills directory:
+Or clone it anywhere and link the skill directory into your personal skills:
 
 ```bash
-git clone https://github.com/ArnauFerma/falsifiable-tests ~/.claude/skills/falsifiable-tests
+git clone https://github.com/ArnauFerma/falsifiable-tests
+ln -s "$PWD/falsifiable-tests/skills/falsifiable-tests" ~/.claude/skills/falsifiable-tests
 ```
 
-Or into a single project:
-
-```bash
-git clone https://github.com/ArnauFerma/falsifiable-tests .claude/skills/falsifiable-tests
-```
+(or into a single project's `.claude/skills/`). `git pull` in the clone updates it.
 
 In Claude Code it loads automatically when tests are written, modified or reviewed, and
 can be invoked directly with `/falsifiable-tests` (or `/falsifiable-tests:falsifiable-tests`
@@ -57,26 +54,29 @@ Issues and pull requests are welcome, especially:
   "What was measured" below for why that matters
 - vacuous-test patterns that are missing from `references/vacuous-patterns.md`
 
-Changes to `scripts/mutate.py` need a test in `scripts/test_mutate.py`, and the test
+Changes to `scripts/mutate.py` need a test in `scripts/test_mutate.py` (both under
+`skills/falsifiable-tests/`), and the test
 needs its red proof — run the harness against itself with your change reverted as the
 mutation and confirm the new test is what catches it.
 
 ## What it contains
 
 ```
-.claude-plugin/             plugin and marketplace manifests
-SKILL.md                    the method: the red proof, degenerate returns, honesty rules
-references/php.md           PHPUnit and Pest
-references/java.md          JUnit 4/5 with Maven or Gradle
-references/javascript.md    Vitest, Jest, node:test
-references/pytest.md        Python
-references/other-stacks.md  Go, Rust, Ruby, Bats, HTTP and data tests
-references/mutations.md     how to choose a mutation, and what to do when none works
-references/vacuous-patterns.md  field guide to tests that cannot fail
-references/audit.md         auditing an existing suite, with a report template
-scripts/mutate.py           batch harness: many mutations, which tests noticed, safe restore
-scripts/test_mutate.py      the harness's own tests (python3 -m pytest scripts/ -q)
-scripts/self-mutations.json defects planted in the harness by CI; every one must be caught
+.claude-plugin/                       plugin and marketplace manifests
+skills/falsifiable-tests/
+  SKILL.md                            the method: the red proof, degenerate returns, honesty rules
+  references/php.md                   PHPUnit and Pest
+  references/java.md                  JUnit 4/5 with Maven or Gradle
+  references/javascript.md            Vitest, Jest, node:test
+  references/pytest.md                Python
+  references/other-stacks.md          Go, Rust, Ruby, Bats, HTTP and data tests
+  references/mutations.md             how to choose a mutation, equivalent mutants, when none works
+  references/vacuous-patterns.md      field guide to tests that cannot fail
+  references/audit.md                 auditing an existing suite, with a report template
+  scripts/mutate.py                   batch harness: many mutations, which tests noticed, safe restore
+  scripts/test_mutate.py              the harness's own tests
+  scripts/self-mutations.json         defects planted in the harness by CI; every one must be caught
+evals/                                eval cases for `claude plugin eval` (see below)
 ```
 
 `scripts/mutate.py` is language-agnostic. It edits the real file, runs your real test
